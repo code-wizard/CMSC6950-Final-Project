@@ -1,5 +1,5 @@
 report: report.tex GenDataCompare4.png 'Iris Data Classification Accuracies.png' IrisData_noise_Results.png 'Sample Data Classification Accuracies.png'
-	latexmk  -pdf
+	latexmk  -pdf -c
 
 GenDataCompare4.png: data/iris.csv main.py data/matlab_Data.mat
 	python main.py
@@ -23,10 +23,7 @@ data/matlab_Data.mat:
 
 clean: almost_clean
 	rm report.pdf
-	rm GenDataCompare4.png
-	rm IrisData_noise_Results.png
-	rm 'Sample Data Classification Accuracies.png'
-	rm 'Iris Data Classification Accuracies.png'
+	rm *.png
 
 almost_clean:
 	latexmk -c
