@@ -31,6 +31,10 @@ report.aux
 report.fls
 report.log
 main_bk.py
+Experiment.npy
+GenDataCompare4.png
+Iris Data Classification Accuracies.png
+IrisData_noise_Results.png
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -75,6 +79,7 @@ target/
 
 # IPython Notebook
 .ipynb_checkpoints
+Untitled.ipynb
 
 # pyenv
 .python-version
