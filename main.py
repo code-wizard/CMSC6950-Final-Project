@@ -39,16 +39,18 @@ if __name__ == '__main__':
 
     # Describe database
     desc = clean_df.describe()
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(10, 2))
     plot = plt.subplot(111, frame_on=False)
     plot.xaxis.set_visible(False)
     plot.yaxis.set_visible(False)
-    table(plot, desc, loc='upper right')
+    table(plot, desc, loc='best', colColours=["orange", "orange", "orange", "orange"])
     # plt.show()
     # save the plot as a png file
+    plt.title("Dataset Descripion")
     plt.savefig('desc_plot.png')
 
     # Visualize the data
+    plt.figure()
     sns.countplot(clean_df['species'])
     species = clean_df['species'].value_counts()
     plt.ylim(0, 100)
