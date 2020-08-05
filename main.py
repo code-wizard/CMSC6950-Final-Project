@@ -165,9 +165,8 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = load_dataset()
     cm = plt.cm.RdBu
     cm_bright = ListedColormap(['seagreen', 'darkorange'])
-    # plt.figure(figsize=(6,5))
-
-    ax = plt.subplot(2, 1, 1)
+    plt.figure()
+    ax = plt.subplot(1, 1, 1)
     # Plot the training points
     s = ax.scatter(x_train[:, 0], x_train[:, 1], c=y_train, cmap=cm_bright,
                    edgecolors='k', alpha=0.6, )
@@ -178,9 +177,9 @@ if __name__ == '__main__':
     plt.title("Training data specie distribution by Sepal length and width")
     # plt.show()
     plt.savefig("training.png")
-
+    plt.figure()
     # plt.figure(figsize=(6,5))
-    ax = plt.subplot(2, 1, 2)
+    ax = plt.subplot(1, 1, 1)
     ax.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap=cm_bright, alpha=0.6,
                edgecolors='k')
     plt.xlabel("Sepal Length")
