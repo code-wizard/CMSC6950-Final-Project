@@ -26,6 +26,10 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+report.fdb_latexmk
+report.aux
+report.fls
+report.log
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
