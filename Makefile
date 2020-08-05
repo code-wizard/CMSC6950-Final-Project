@@ -1,23 +1,24 @@
-report: report.tex GenDataCompare4.png 'Iris Data Classification Accuracies.png' IrisData_noise_Results.png 'Sample Data Classification Accuracies.png'
+report: report.tex classification_noise.png classification_score.png desc_plot.png training.png test.png
 	latexmk  -pdf -c
 
-GenDataCompare4.png: data/iris.csv main.py data/matlab_Data.mat
+classification_noise.png: data/iris.csv main.py
 	python main.py
 
-'Iris Data Classification Accuracies.png': data/iris.csv main.py data/matlab_Data.mat
+classification_score.png: data/iris.csv main.py
 	python main.py
 
-'Sample Data Classification Accuracies.png': data/iris.csv main.py data/matlab_Data.mat
+desc_plot.png: data/iris.csv main.py
 	python main.py
 
-IrisData_noise_Results.png: data/iris.csv main.py data/matlab_Data.mat
+training.png: data/iris.csv main.py
+	python main.py
+
+test.png: data/iris.csv main.py
 	python main.py
 
 data/iris.csv:
 	cd data && wget https://owlya.s3.us-east-2.amazonaws.com/iris.csv
 
-data/matlab_Data.mat:
-	cd data && wget https://owlya.s3.us-east-2.amazonaws.com/matlab_Data.mat
 
 .PHONY: clean almost_clean
 

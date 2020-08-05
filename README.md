@@ -20,3 +20,4 @@ pip install lfspy
 * [SciPy](https://www.scipy.org/)>=1.1
 * [Scikit-learn](https://scikit-learn.org/stable/index.html)>=0.18.2
 * [pytest](https://docs.pytest.org/en/latest/)>=5.0.0
+* [Seaborn] (https://seaborn.pydata.org/)

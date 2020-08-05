@@ -1,8 +1,10 @@
+import argparse
+
 import numpy as np
 import warnings
 from scipy.io import loadmat
 from LFSpy import LocalFeatureSelection
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.svm import LinearSVC
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.pipeline import Pipeline
@@ -10,11 +12,22 @@ from sklearn import datasets
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn import preprocessing
-import argparse, os
+import seaborn as sns
+from pandas.plotting import table
+from sklearn import metrics
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import train_test_split
+from matplotlib.colors import ListedColormap
+
 np.random.seed(905)
+
 from joblib import dump, load
 
 if __name__ == '__main__':
+    df = pd.read_csv('data/iris.csv', sep=',')
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, default="trained")
 
@@ -22,44 +35,70 @@ if __name__ == '__main__':
     mode = args.mode
 
     t = pd.read_csv('data/iris.csv', sep=',')
-    data = t.drop(['species'], axis=1).to_numpy()
+    clean_df = df.query('species =="setosa" or species=="versicolor"')
+
+    # Describe database
+    desc = clean_df.describe()
+    plt.figure(figsize=(10, 4))
+    plot = plt.subplot(111, frame_on=False)
+    plot.xaxis.set_visible(False)
+    plot.yaxis.set_visible(False)
+    table(plot, desc, loc='upper right')
+    # plt.show()
+    # save the plot as a png file
+    plt.savefig('desc_plot.png')
+
+    # Visualize the data
+    sns.countplot(clean_df['species'])
+    species = clean_df['species'].value_counts()
+    plt.ylim(0, 100)
+    plt.title('Species Distribution', fontsize=15)
+    plt.xlabel('Species', fontsize=12)
+    plt.ylabel('Count (Entries)', fontsize=12)
+    plt.grid(color='#ddd', linestyle='-', linewidth=2, alpha=0.2)
+    # plt.text(x=-.175, y=100, s='10,422', fontsize=15)
+    # plt.text(x=.875, y=100, s='1988', fontsize=15)
+    xval = 0
+    for index, value in species.items():
+        plt.text(x=xval, y=value + 5, s=str(value))
+        xval += 1.02
+    plt.savefig("classes.png")
+
+    # Extract features and label
+    X = clean_df.drop(['species'], axis=1).to_numpy()
+    y = clean_df['species'].to_numpy()
+
+    # Label encode the label
     le = preprocessing.LabelEncoder()
-    labels = le.fit_transform(t['species'].to_numpy())
+    y = le.fit_transform(y)
 
 
-    def load_dataset(name, m=0):
+    def load_dataset(m=0):
+        features = X
+        if m > 0:
+            features = add_noise_vars(X, m)
+        X_train, X_test, y_train, y_test = train_test_split(features, y, random_state=777, test_size=.2)
+        return X_train, X_test, y_train, y_test
+
+
+    def plotScores(scores, title=None, filename="plot.png"):
         '''
-        Loads a test/demo dataset.
+        Plot classification scores.
         '''
-        print('Loading dataset ' + name + '...')
-        if name is 'sample':
-            mat = loadmat('data/matlab_Data')
-            training_data = mat['Train'].T
-            training_labels = mat['TrainLables'][0]
-            testing_data = mat['Test'].T
-            testing_labels = mat['TestLables'][0]
+        plt.figure()
+        plt.bar(['Tree', 'GBayes', 'KNN', 'LFS'], scores, color='lightseagreen')
+        plt.ylim([0, 1])
+        plt.xlabel("Classifier")
+        plt.ylabel("Prediction")
+        plt.xticks(color='darkslategray')
+        plt.yticks(color='tomato')
 
-        elif name is 'iris':
-            # we only take the first two classes for binary classification
-            train_idx = np.arange(0, 100, 2)
-            test_idx = np.arange(1, 100, 2)
+        for i, v in enumerate(scores):
+            plt.text(i - 0.1, 0.4, '{:.{}f}'.format(v, 2), size=12)
 
-            iris = data
-
-            if m > 0:
-                iris = add_noise_vars(data, m)
-            #         iris = t.drop(['species'],axis=1).to_numpy()
-            training_data = iris[train_idx, :]
-            training_labels = labels[train_idx]
-            testing_data = iris[test_idx, :]
-            testing_labels = labels[test_idx]
-        #         training_data = iris.data[train_idx,:]
-        #         training_labels = iris.target[train_idx]
-        #         testing_data = iris.data[test_idx,:]
-        #         testing_labels = iris.target[test_idx]
-
-        return training_data, training_labels, testing_data, testing_labels
-
+        plt.title(title, fontsize=14)
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0.1, dpi=300)
+        return None
 
     def add_noise_vars(x, m, std_range=[0, 3]):
         '''
@@ -83,14 +122,13 @@ if __name__ == '__main__':
         pipeline.fit(x_train, y_train)
         y_pred = pipeline.predict(x_test)
         score = pipeline.score(x_test, y_test)
-
         return score, y_pred
 
 
-    def results_rforest(x_train, y_train, x_test, y_test):
-        print('Training and testing a Random Forest with default parameters.')
-        rfc = RandomForestClassifier(random_state=777)
-        pipeline = Pipeline([('classifier', rfc)])
+    def results_decision(x_train, y_train, x_test, y_test):
+        print('Training and testing a Decision Forest with default parameters.')
+        desc = DecisionTreeClassifier(max_depth=5, random_state=777)
+        pipeline = Pipeline([('classifier', desc)])
         pipeline.fit(x_train, y_train)
         y_pred = pipeline.predict(x_test)
         score = pipeline.score(x_test, y_test)
@@ -98,12 +136,11 @@ if __name__ == '__main__':
         return score, y_pred
 
 
-    def results_fsvm(x_train, y_train, x_test, y_test):
-        print(
-            'Training and testing a SVM with default parameters with F-stat feature selection (25% of features selected).')
-        svm = LinearSVC(random_state=777)
-        sel = SelectKBest(f_classif, k=int(0.25 * x_train.shape[1]))
-        pipeline = Pipeline([('feat_sel', sel), ('classifier', svm)])
+    def results_neighbor(x_train, y_train, x_test, y_test):
+        print('Training and testing a K-Neighbors with default parameters')
+        k = KNeighborsClassifier(3)
+        #     sel = SelectKBest(f_classif, k=int(0.25*x_train.shape[1]))
+        pipeline = Pipeline([('classifier', k)])
         pipeline.fit(x_train, y_train)
         y_pred = pipeline.predict(x_test)
         score = pipeline.score(x_test, y_test)
@@ -111,177 +148,84 @@ if __name__ == '__main__':
         return score, y_pred
 
 
-    def plotScores(scores, title=None):
-        '''
-        Plot classification scores.
-        '''
-        plt.figure()
-        plt.bar(['LFS', 'RFC', 'SVM'], scores)
-        plt.ylim([0, 1])
+    def results_naive(x_train, y_train, x_test, y_test):
+        print('Training and testing a Gaussian Naive Bayes with default parameters ')
+        naive = GaussianNB()
+        #     sel = SelectKBest(f_classif, k=int(0.25*x_train.shape[1]))
+        pipeline = Pipeline([('classifier', naive)])
+        pipeline.fit(x_train, y_train)
+        y_pred = pipeline.predict(x_test)
+        score = pipeline.score(x_test, y_test)
 
-        for i, v in enumerate(scores):
-            plt.text(i - 0.1, 0.4, '{:.{}f}'.format(v, 2), size=12)
-
-        plt.title(title, fontsize=14)
-        plt.savefig(title + '.png', bbox_inches='tight', pad_inches=0.1, dpi=300)
-        return None
+        return score, y_pred
 
 
-    # %% GenData Experiment
-    def create_dataset(n_samples, n_features, n_informative, n_redundant, n_repeated, n_clusters):
-        '''
-        Create a synthetic dataset with desired properties.
-        '''
-        X, Y = datasets.make_classification(n_samples=n_samples,
-                                            n_features=n_features,
-                                            n_informative=n_informative,
-                                            n_redundant=n_redundant,
-                                            n_repeated=n_repeated,
-                                            n_classes=2,
-                                            n_clusters_per_class=n_clusters,
-                                            weights=None,
-                                            flip_y=0.10,
-                                            class_sep=1.,
-                                            hypercube=True,
-                                            shift=None,
-                                            scale=1.0,
-                                            shuffle=True,
-                                            random_state=321)
-        return X, Y
+    x_train, x_test, y_train, y_test = load_dataset()
+    cm = plt.cm.RdBu
+    cm_bright = ListedColormap(['seagreen', 'darkorange'])
+    # plt.figure(figsize=(6,5))
 
+    ax = plt.subplot(2, 1, 1)
+    # Plot the training points
+    s = ax.scatter(x_train[:, 0], x_train[:, 1], c=y_train, cmap=cm_bright,
+                   edgecolors='k', alpha=0.6, )
+    # Plot the testing points
+    plt.xlabel("Sepal Length")
+    plt.ylabel("Sepal Width")
+    plt.legend(handles=s.legend_elements()[0], labels=["Setosa", "Versicolor"])
+    plt.title("Training data specie distribution by Sepal length and width")
+    # plt.show()
+    plt.savefig("training.png")
 
-    def runExperiment():
-        '''
-        Run an example experiment showing the effect of redundant variables and
-        repeated variables in a p >> n setting.
-        '''
-        clusters = [1, 2, 3]
-        param = [[50, 5, 5, 0, 0],
-                 [50, 45, 5, 40, 0],
-                 [50, 45, 5, 0, 40],
-                 [50, 45, 5, 20, 20]]
-
-        scores = np.zeros((len(clusters), len(param), 3), dtype=float)
-
-        for c, nc in enumerate(clusters):
-
-            for (i, p) in enumerate(param):
-                X, Y = create_dataset(p[0], p[1], p[2], p[3], p[4], nc)
-                training_data = X[:40]
-                training_labels = Y[:40]
-                testing_data = X[40:]
-                testing_labels = Y[40:]
-
-                scores[c, i, 0], _ = results_lfspy(training_data, training_labels, testing_data, testing_labels)
-                scores[c, i, 1], _ = results_rforest(training_data, training_labels, testing_data, testing_labels)
-                scores[c, i, 2], _ = results_fsvm(training_data, training_labels, testing_data, testing_labels)
-
-        return scores
-
-
-    def plotScoresGrouped(scores, title=None):
-        '''
-        Plot classification scores grouped by setting
-        '''
-        n, l, nclf = scores.shape
-        ind = np.arange(l)
-        fig, ax = plt.subplots(n, 1, figsize=(8, 6))
-
-        for c in range(n):
-            slfs = np.squeeze(scores[c, :, 0])
-            srfc = np.squeeze(scores[c, :, 1])
-            ssvm = np.squeeze(scores[c, :, 2])
-
-            width = 0.3
-
-            ax[c].bar(ind - width, slfs, width, label='LFS')
-            ax[c].bar(ind, srfc, width, label='RFC')
-            ax[c].bar(ind + width, ssvm, width, label='SVM')
-
-            ax[c].set_ylim([0, 1])
-            ax[c].set(ylabel='{} Cluster(s)'.format(c + 1))
-
-            for i, v in enumerate(slfs):
-                ax[c].text(i - width - 0.13, 0.3, '{:.{}f}'.format(v, 2), size=12)
-            for i, v in enumerate(srfc):
-                ax[c].text(i - 0.13, 0.3, '{:.{}f}'.format(v, 2), size=12)
-            for i, v in enumerate(ssvm):
-                ax[c].text(i + width - 0.13, 0.3, '{:.{}f}'.format(v, 2), size=12)
-
-            if c == 0:
-                fig.suptitle(title, fontsize=14)
-                ax[c].legend()
-                ax[c].xaxis.set_visible(False)
-            if c == 1:
-                plt.ylabel('Accuracy')
-                ax[c].xaxis.set_visible(False)
-            if c == 2:
-                plt.xticks(range(4), labels=['r=0, s=0', 'r=40, s=0', 'r=0, s=40', 'r=20, s=20'])
-
-        plt.savefig('GenDataCompare4.png', bbox_inches='tight', pad_inches=0.1, dpi=300)
-        return None
+    # plt.figure(figsize=(6,5))
+    ax = plt.subplot(2, 1, 2)
+    ax.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap=cm_bright, alpha=0.6,
+               edgecolors='k')
+    plt.xlabel("Sepal Length")
+    plt.ylabel("Sepal Width")
+    plt.legend(handles=s.legend_elements()[0], labels=["Setosa", "Versicolor"])
+    plt.title("Test data specie distribution by Sepal length and width")
+    plt.savefig("test.png")
 
     if mode == "new":
-        training_data, training_labels, testing_data, testing_labels = load_dataset('sample')
-
-        # dump(lfs_model, 'lfs_model.joblib')
-        # dump(rfc_model, 'rfc_model.joblib')
-        # dump(svm_model, 'svm_model.joblib')
-
-        score_lfs, y_pred_lfs = results_lfspy(training_data, training_labels, testing_data, testing_labels)
-        score_rfc, y_pred_rfc = results_rforest(training_data, training_labels, testing_data, testing_labels)
-        score_svm, y_pred_svm = results_fsvm(training_data, training_labels, testing_data, testing_labels)
-
-        training_data, training_labels, testing_data, testing_labels = load_dataset('iris')
-        score_lfs_iris, y_pred_lfs_iris = results_lfspy(training_data, training_labels, testing_data, testing_labels)
-        score_rfc_iris, y_pred_rfc_iris = results_rforest(training_data, training_labels, testing_data, testing_labels)
-        score_svm_iris, y_pred_svm_iris = results_fsvm(training_data, training_labels, testing_data, testing_labels)
-
-        # Plot the comparison of results
-        scores = [score_lfs, score_rfc, score_svm]
-        scores_iris = [score_lfs_iris, score_rfc_iris, score_svm_iris]
-        with open('result-1.npy', 'wb') as f:
-            np.save(f, scores)
-            np.save(f, scores_iris)
+        score_lfs, y_pred_lfs = results_lfspy(x_train, y_train, x_test, y_test)
+        score_des, y_pred_des = results_decision(x_train, y_train, x_test, y_test)
+        score_nei, y_pred_nei = results_neighbor(x_train, y_train, x_test, y_test)
+        score_bye, y_pred_bye = results_naive(x_train, y_train, x_test, y_test)
+        score_list = [score_lfs, score_des, score_nei, score_bye]
+        np.save("classification.npy", score_list)
     else:
-        with open('result-1.npy', 'rb') as f:
-            scores = np.load(f)
-            scores_iris = np.load(f)
+        score_list = np.load("classification.npy")
 
-    plotScores(scores, 'Sample Data Classification Accuracies')
-    plotScores(scores_iris, 'Iris Data Classification Accuracies')
+    plotScores(score_list, 'Classification Score', 'classification_score.png')
 
     mlist = np.arange(0, 250, 25)
 
     if mode == "new":
         # %% Compare across number of noise variables on Iris dataset
         Score_LFS = []
-        Score_SVM = []
-        Score_RFC = []
-
+        Score_GB = []
+        Score_KNN = []
+        Score_TREE = []
         for m in mlist:
-            training_data, training_labels, testing_data, testing_labels = load_dataset('iris', m=m)
-
-            s1, _ = results_lfspy(training_data, training_labels, testing_data, testing_labels)
-            s2, _ = results_rforest(training_data, training_labels, testing_data, testing_labels)
-            s3, _ = results_fsvm(training_data, training_labels, testing_data, testing_labels)
+            s1, _ = results_lfspy(x_train, y_train, x_test, y_test)
+            s2, _ = results_decision(x_train, y_train, x_test, y_test)
+            s3, _ = results_neighbor(x_train, y_train, x_test, y_test)
+            s4, _ = results_naive(x_train, y_train, x_test, y_test)
 
             Score_LFS.append(s1)
-            Score_RFC.append(s2)
-            Score_SVM.append(s3)
-
-        # Save results
-        np.save('result-2-Score_RFC.npy', Score_RFC)
+            Score_TREE.append(s2)
+            Score_KNN.append(s3)
+            Score_GB.append(s4)
+        np.save('result-2-Score_TREE.npy', Score_TREE)
         np.save('result-2-Score_LFS.npy', Score_LFS)
-        np.save('result-2-Score_SVM.npy', Score_SVM)
-        # with open('result-2.npy', 'wb') as f:
-        #     np.save(f, Score_RFC)
-        #     np.save(f, Score_LFS)
-        #     np.save(f, Score_SVM)
+        np.save('result-2-Score_KNN.npy', Score_KNN)
+        np.save('result-2-Score_GB.npy', Score_KNN)
     else:
-        Score_RFC = np.load('result-2-Score_RFC.npy')
+        Score_TREE = np.load('result-2-Score_TREE.npy')
         Score_LFS = np.load('result-2-Score_LFS.npy')
-        Score_SVM = np.load('result-2-Score_SVM.npy')
+        Score_KNN = np.load('result-2-Score_KNN.npy')
+        Score_GB = np.load('result-2-Score_GB.npy')
         #
         # with open('result-2.npy', 'rb') as f:
         #     Score_RFC = np.load(f)
@@ -290,20 +234,14 @@ if __name__ == '__main__':
     # Plot the results
     plt.figure()
     plt.plot(mlist, Score_LFS)
-    plt.plot(mlist, Score_RFC)
-    plt.plot(mlist, Score_SVM)
+    plt.plot(mlist, Score_TREE)
+    plt.plot(mlist, Score_KNN)
+    plt.plot(mlist, Score_GB)
     plt.vlines(100, 0, 1.2, linestyles='dashed')
     plt.ylim([0, 1.2])
 
     # plt.xlabel('Number of Noise Features')
     plt.title('Classification Accuracy by Number of Added Noise Variables', fontsize=14)
-    plt.legend(['LFS', 'Random Forest', 'SVM'], loc='lower right')
-    plt.savefig('IrisData_noise_Results.png', bbox_inches='tight', pad_inches=0.1, dpi=300)
-    # plt.show()
+    plt.legend(['LFS', 'Desicion Tree', 'KNN', 'Gaussian Bayes'], loc='lower right')
+    plt.savefig('classification_noise.png', bbox_inches='tight', pad_inches=0.1, dpi=300)
 
-    if mode == "new":
-        scores = runExperiment()
-        np.save("Experiment.npy", scores)
-    else:
-        scores = np.load("Experiment.npy")
-    plotScoresGrouped(scores, 'Comparison with Generated Datasets')
