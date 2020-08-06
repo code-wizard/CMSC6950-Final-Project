@@ -5,8 +5,8 @@ In this project I compared the classification performance of 3 Scikit-learn
 classifiers ( K-Nearest Neighbors, Gaussian Bayes, 
 and Decision Tree) with another third party software Local Feature Selection (LFS). 
 
-#####software: (https://github.com/McMasterRS/LFSpy/tree/master/LFSpy)
-#####Data source: (https://archive.ics.uci.edu/ml/datasets/iris)
+software: https://github.com/McMasterRS/LFSpy/tree/master/LFSpy
+Data source: https://archive.ics.uci.edu/ml/datasets/iris
 To reproduce this report, clone this repo and type `make`. 
 ### Steps to Reproduce Report
  * clone the repo `git clone https://github.com/code-wizard/CMSC6950-Final-Project.git`
@@ -22,7 +22,7 @@ To reproduce this report, clone this repo and type `make`.
 * [SciPy](https://www.scipy.org/)>=1.1
 * [Scikit-learn](https://scikit-learn.org/stable/index.html)>=0.18.2
 * [pytest](https://docs.pytest.org/en/latest/)>=5.0.0
-* [Seaborn] (https://seaborn.pydata.org/)
+* [Seaborn](https://seaborn.pydata.org/)>=0.10.1
 
 #### Core File descriptions
 * main.py: This is the main python file that does the comparison and generate the artifacts for the report
