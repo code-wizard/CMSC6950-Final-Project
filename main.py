@@ -28,23 +28,27 @@ from joblib import dump, load
 if __name__ == '__main__':
     df = pd.read_csv('data/iris.csv', sep=',')
 
+    # Accept command line option
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, default="trained")
 
+    # Parse commandline option
     args, _ = parser.parse_known_args()
     mode = args.mode
 
+    #Read data
     t = pd.read_csv('data/iris.csv', sep=',')
+    # Select only two classes out of the three
     clean_df = df.query('species =="setosa" or species=="versicolor"')
 
-    # Describe database
+    # Describe database and plot table
     desc = clean_df.describe()
     plt.figure(figsize=(10, 2))
     plot = plt.subplot(111, frame_on=False)
     plot.xaxis.set_visible(False)
     plot.yaxis.set_visible(False)
+
     table(plot, desc, loc='best', colColours=["orange", "orange", "orange", "orange"])
-    # plt.show()
     # save the plot as a png file
     plt.title("Dataset Descripion")
     plt.savefig('desc_plot.png')
@@ -70,12 +74,15 @@ if __name__ == '__main__':
     X = clean_df.drop(['species'], axis=1).to_numpy()
     y = clean_df['species'].to_numpy()
 
-    # Label encode the label
+    # Label encode the label, convert the clases to 0s and 1s
     le = preprocessing.LabelEncoder()
     y = le.fit_transform(y)
 
 
     def load_dataset(m=0):
+        '''
+        split dataset
+        '''
         features = X
         if m > 0:
             features = add_noise_vars(X, m)
