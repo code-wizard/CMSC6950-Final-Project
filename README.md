@@ -1,7 +1,7 @@
 # CMSC6950 Localized Feature Selection (LFS)
 ### Chukwuebuka Amaefula
 
-In this project we compare the classification performance of 3 Scikit-learn 
+In this project I compared the classification performance of 3 Scikit-learn 
 classifiers ( K-Nearest Neighbors, Gaussian Bayes, 
 and Decision Tree) with another third party software Local Feature Selection (LFS). 
 
