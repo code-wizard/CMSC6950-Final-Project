@@ -5,8 +5,9 @@ In this project I compared the classification performance of 3 Scikit-learn
 classifiers ( K-Nearest Neighbors, Gaussian Bayes, 
 and Decision Tree) with another third party software Local Feature Selection (LFS). 
 
-software: https://github.com/McMasterRS/LFSpy/tree/master/LFSpy
-Dhindsa et al., (2020). LFSpy: A Python Implementation of Local Feature Selection for Data Classification with scikit-learn Compatibility. Journal of Open Source Software, 5(49), 1958, https://doi.org/10.21105/joss.01958  
+Software: https://github.com/McMasterRS/LFSpy/tree/master/LFSpy    
+
+Paper: Dhindsa et al., (2020). LFSpy: A Python Implementation of Local Feature Selection for Data Classification with scikit-learn Compatibility. Journal of Open Source Software, 5(49), 1958, https://doi.org/10.21105/joss.01958    
   
 Data source: https://archive.ics.uci.edu/ml/datasets/iris  
  
