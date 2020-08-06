@@ -1,20 +1,18 @@
-# Localized Feature Selection (LFS)
+# CMSC6950 Localized Feature Selection (LFS)
+### Chukwuebuka Amaefula
 
+In this project we compare the classification performance of 3 Scikit-learn 
+classifiers ( K-Nearest Neighbors, Gaussian Bayes, 
+and Decision Tree) with another third party software Local Feature Selection (LFS). 
 
-Full documentation can be found at: lfspy.readthedocs.io
-
-Localized feature selection (LFS) is a supervised machine learning approach for embedding localized feature selection in classification. The sample space is partitioned into overlapping regions, and subsets of features are selected that are optimal for classification within each local region. As the size 
-and membership of the feature subsets 
-can vary across regions, LFS is able to adapt to local variation across the entire sample space.
-
-### Installation
-It is recommended to install in a [virtualenv](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
-
-```
-pip install lfspy
-```
-### Install requirements
-``pip install -r requirements.txt``
+To reproduce this report, clone this repo and type `make`. 
+### Steps to Reproduce Report
+ * clone the repo `git clone https://github.com/code-wizard/CMSC6950-Final-Project.git`
+ * It is recommended to install in a [virtualenv](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/) (optional).
+ * Install dependencies `pip install -r requirements.txt`
+ * Run `make` to reo the comparison and create a new report
+ * Run `make clean` to clean old report
+ * To retrain the models before comparison run `make -f Makefile_New` (optional)
 
 ### Dependancies
 * Python 3
